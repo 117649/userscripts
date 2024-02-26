@@ -150,6 +150,7 @@
   );
   unsafeWindow.image_trans = async (a, o) => {
     let target = document.getElementById("imgsrc_" + a);
+    let tb = document.querySelector("#image_" + a + " [onload]");
     if (target.transing) return;
     if (isBlobUrlRe.test(target.src))
       if (o) return;
@@ -157,11 +158,13 @@
     else {
       target.realsrc = target.src;
       target.transing = true;
+      tb.style.backgroundColor = "yellowgreen";
       try {
         target.src = await cotransTranslation(target);
       } catch (error) {
         console.log(error);
       }
+      tb.style.backgroundColor = null;
       target.transing = void 0;
       delete target.transing;
     }
@@ -180,6 +183,7 @@
       )
   );
   var tAllBtn = document.createElement("img");
+  tAllBtn.id = "∀";
   tAllBtn.src = transIcon;
   tAllBtn.style.marginTop = "20px";
   tAllBtn.style.height = "24px";
@@ -190,12 +194,15 @@
   unsafeWindow.listTrans = async (_) => {
     if (transing) return;
     transing = true;
+    let tb = document.getElementById("∀");
+    tb.style.backgroundColor = "yellowgreen";
     while (transList.length) {
       if (!transAll) break;
       try {
         await image_trans(transList.shift(), true);
       } catch (e) {}
     }
+    tb.style.backgroundColor = null;
     transing = false;
   };
   tAllBtn.onclick = (_) => {
@@ -326,6 +333,7 @@ const createFormData = (imgBlob) => {
 
 /** 等待翻译完成 */
 const waitTranslation = (id) => {
+  if (!id) throw new Error("translation.tip.id_not_returned");
   const ws = new WebSocket(`wss://api.cotrans.touhou.ai/task/${id}/event/v1`);
   return new Promise((resolve, reject) => {
     ws.onmessage = (e) => {
@@ -446,7 +454,6 @@ const cotransTranslation = async (img) => {
     throw new Error(res.responseText);
   }
   if ("error_id" in resData) throw new Error(resData.error_id);
-  if (!resData.id) throw new Error("translation.tip.id_not_returned");
   const translation_mask =
     resData.result?.translation_mask || (await waitTranslation(resData.id));
   return mergeImage(imgBlob, translation_mask);
